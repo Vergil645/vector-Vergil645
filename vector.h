@@ -1,5 +1,7 @@
 #pragma once
-#include <cstddeftemplate <typename T>
+#include <cstddef>
+
+template <typename T>
 struct vector {
   using iterator = T*;
   using const_iterator = T const*;
@@ -48,7 +50,7 @@ struct vector {
   iterator erase(const_iterator first, const_iterator last); // O(N) nothrow(swap)
 
 private:
-  T* data;
-  size_t size;
-  size_t capacity;
+  T* data_;
+  size_t size_;
+  size_t capacity_;
 }; 
