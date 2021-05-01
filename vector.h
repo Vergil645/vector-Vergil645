@@ -19,16 +19,14 @@ struct vector {
   }
 
   ~vector() noexcept {
-    clear_array(data_, size_);
+    clear_array_prefix(data_, size_);
     delete_data();
   }
 
   T& operator[](size_t i) noexcept {
-    assert(i < size_);
     return data_[i];
   }
   T const& operator[](size_t i) const noexcept {
-    assert(i < size_);
     return data_[i];
   }
 
@@ -43,20 +41,16 @@ struct vector {
   }
 
   T& front() noexcept {
-    assert(size_ > 0);
     return data_[0];
   }
   T const& front() const noexcept {
-    assert(size_ > 0);
     return data_[0];
   }
 
   T& back() noexcept {
-    assert(size_ > 0);
     return data_[size_ - 1];
   }
   T const& back() const noexcept {
-    assert(size_ > 0);
     return data_[size_ - 1];
   }
   void push_back(T const& value) {
@@ -75,7 +69,6 @@ struct vector {
     size_++;
   }
   void pop_back() noexcept {
-    assert(size_ != 0);
     --size_;
     data_[size_].~T();
   }
@@ -99,7 +92,7 @@ struct vector {
   }
 
   void clear() noexcept {
-    clear_array(data_, size_);
+    clear_array_prefix(data_, size_);
     size_ = 0;
   }
 
@@ -124,7 +117,6 @@ struct vector {
   }
 
   iterator insert(const_iterator pos, T const& value) {
-    assert(pos >= begin() && pos <= end());
     size_t pos_index = pos - begin();
     push_back(value);
     for (size_t i = size_ - 1; i != pos_index; i--) {
@@ -134,7 +126,6 @@ struct vector {
   }
 
   iterator erase(const_iterator pos) noexcept {
-    assert(pos >= begin() && pos <= end());
     if (pos == end()) {
       return end();
     } else {
@@ -148,8 +139,6 @@ struct vector {
   }
 
   iterator erase(const_iterator first, const_iterator last) noexcept {
-    assert(first >= begin() && first <= end());
-    assert(last >= first && last <= end());
     if (first == last) {
       return const_cast<iterator>(first);
     } else {
@@ -175,13 +164,12 @@ private:
       operator delete(data_);
     }
   }
-  void clear_array(T* data_array, size_t end_index) {
-    for (size_t i = 0; i != end_index; i++) {
+  void clear_array_prefix(T* data_array, size_t last_index) {
+    for (size_t i = 0; i != last_index; i++) {
       data_array[i].~T();
     }
   }
   void change_capacity(size_t new_cap) {
-    assert(size_ <= new_cap);
     if (new_cap == 0) {
       delete_data();
       data_ = nullptr;
@@ -191,12 +179,12 @@ private:
         try {
           new (new_data + i) T(data_[i]);
         } catch (...) {
-          clear_array(new_data, i);
+          clear_array_prefix(new_data, i);
           operator delete(new_data);
           throw;
         }
       }
-      clear_array(data_, size_);
+      clear_array_prefix(data_, size_);
       delete_data();
       data_ = new_data;
     }
