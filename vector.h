@@ -63,9 +63,10 @@ struct vector {
 
   void push_back(T const& value) {
     if (size_ == capacity_) {
-      size_t val_pos = &value - begin();
+      size_t val_pos = &value >= begin() ? &value - begin()
+                                         : std::numeric_limits<size_t>::max();
       change_capacity(capacity_ == 0 ? 1 : capacity_ * 2);
-      new (end()) T(val_pos >= 0 && val_pos < size_ ? data_[val_pos] : value);
+      new (end()) T(val_pos < size_ ? data_[val_pos] : value);
     } else {
       new (end()) T(value);
     }
