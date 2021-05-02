@@ -7,12 +7,14 @@ struct vector {
   using const_iterator = T const*;
 
   vector() noexcept = default;
+
   vector(vector const& other) : vector() {
     change_capacity(other.size_);
     for (size_t i = 0; i != other.size_; i++) {
       push_back(other[i]);
     }
   }
+
   vector& operator=(vector const& other) {
     vector(other).swap(*this);
     return *this;
@@ -20,12 +22,13 @@ struct vector {
 
   ~vector() noexcept {
     clear_array_prefix(data_, size_);
-    delete_data();
+    operator delete(data_);
   }
 
   T& operator[](size_t i) noexcept {
     return data_[i];
   }
+
   T const& operator[](size_t i) const noexcept {
     return data_[i];
   }
@@ -33,9 +36,11 @@ struct vector {
   T* data() noexcept {
     return data_;
   }
+
   T const* data() const noexcept {
     return data_;
   }
+
   size_t size() const noexcept {
     return size_;
   }
@@ -43,6 +48,7 @@ struct vector {
   T& front() noexcept {
     return data_[0];
   }
+
   T const& front() const noexcept {
     return data_[0];
   }
@@ -50,24 +56,22 @@ struct vector {
   T& back() noexcept {
     return data_[size_ - 1];
   }
+
   T const& back() const noexcept {
     return data_[size_ - 1];
   }
+
   void push_back(T const& value) {
     if (size_ == capacity_) {
-      if (&value >= begin() && &value < end()) {
-        T value_tmp = value;
-        change_capacity(capacity_ == 0 ? 1 : capacity_ * 2);
-        new (end()) T(value_tmp);
-      } else {
-        change_capacity(capacity_ == 0 ? 1 : capacity_ * 2);
-        new (end()) T(value);
-      }
+      size_t val_pos = &value - begin();
+      change_capacity(capacity_ == 0 ? 1 : capacity_ * 2);
+      new (end()) T(val_pos >= 0 && val_pos < size_ ? data_[val_pos] : value);
     } else {
       new (end()) T(value);
     }
-    size_++;
+    ++size_;
   }
+
   void pop_back() noexcept {
     --size_;
     data_[size_].~T();
@@ -80,11 +84,13 @@ struct vector {
   size_t capacity() const noexcept {
     return capacity_;
   }
+
   void reserve(size_t new_cap) {
     if (capacity_ < new_cap) {
       change_capacity(new_cap);
     }
   }
+
   void shrink_to_fit() {
     if (size_ != capacity_) {
       change_capacity(size_);
@@ -105,6 +111,7 @@ struct vector {
   iterator begin() noexcept {
     return data_;
   }
+
   iterator end() noexcept {
     return data_ + size_;
   }
@@ -112,6 +119,7 @@ struct vector {
   const_iterator begin() const noexcept {
     return data_;
   }
+
   const_iterator end() const noexcept {
     return data_ + size_;
   }
@@ -126,16 +134,7 @@ struct vector {
   }
 
   iterator erase(const_iterator pos) noexcept {
-    if (pos == end()) {
-      return end();
-    } else {
-      size_t pos_index = pos - begin();
-      for (size_t i = pos_index; i != size_ - 1; i++) {
-        std::swap(data_[i], data_[i + 1]);
-      }
-      pop_back();
-      return begin() + pos_index;
-    }
+    return pos == end() ? end() : erase(pos, pos + 1);
   }
 
   iterator erase(const_iterator first, const_iterator last) noexcept {
@@ -159,19 +158,15 @@ private:
   size_t size_{0};
   size_t capacity_{0};
 
-  void delete_data() {
-    if (data_ != nullptr) {
-      operator delete(data_);
-    }
-  }
-  void clear_array_prefix(T* data_array, size_t last_index) {
-    for (size_t i = 0; i != last_index; i++) {
+  static void clear_array_prefix(T* data_array, size_t prefix_size) {
+    for (size_t i = 0; i != prefix_size; i++) {
       data_array[i].~T();
     }
   }
+
   void change_capacity(size_t new_cap) {
     if (new_cap == 0) {
-      delete_data();
+      operator delete(data_);
       data_ = nullptr;
     } else {
       T* new_data = static_cast<T*>(operator new(new_cap * sizeof(T)));
@@ -185,7 +180,7 @@ private:
         }
       }
       clear_array_prefix(data_, size_);
-      delete_data();
+      operator delete(data_);
       data_ = new_data;
     }
     capacity_ = new_cap;
